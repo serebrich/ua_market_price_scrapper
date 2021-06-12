@@ -1,11 +1,14 @@
 import requests
 import json
 from pprint import pprint
+import pandas as pd
+from scrapper_parent import ScrapperParent
 
 
-class Silpo:
+class Silpo(ScrapperParent):
 
     def __init__(self):
+        super().__init__()
         self.category = {'Fruits and Veg': 374, 'Alcohol': 22}
         self.headers = {
             'Connection': 'keep-alive',
@@ -30,7 +33,7 @@ class Silpo:
                                     "filialId": 1990,
                                     "From": 1,
                                     "businessId": 1,
-                                    "To": 30000,
+                                    "To": 5000,
                                     "ingredients": False,
                                     "categoryId": None,
                                     "RangeFilters": {},
@@ -38,6 +41,8 @@ class Silpo:
                                     "UniversalFilters": [],
                                     "CategoryFilter": [],
                                     "Promos": []}}
+
+        self.df = pd.DataFrame(columns=['name', 'price', 'price_by'])
 
     def set_payload_to_category(self, category):
         self.request_payload['data']["categoryId"] = self.category[category]
@@ -50,4 +55,23 @@ class Silpo:
                                  data=json.dumps(self.request_payload))
 
         return response.json()['items']
+
+    def add_to_df(self, items_json):
+        data_for_df = {'name': [item['name'] for item in items_json],
+                       'price': [item['price'] for item in items_json],
+                       'price_by': [item['unit'] for item in items_json]}
+
+        self.df = pd.concat([pd.DataFrame(data_for_df), self.df],)
+
+    def run(self):
+        for category in self.category.keys():
+            items_json = self.get_items_json_by_category(category)
+            self.add_to_df(items_json)
+        self.write_to_sheet()
+
+
+
+if __name__ == '__main__':
+    silpo = Silpo()
+    silpo.run()
 
