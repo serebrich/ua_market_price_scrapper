@@ -50,3 +50,4 @@ class Silpo:
                                  data=json.dumps(self.request_payload))
 
         return response.json()['items']
+
